@@ -4,45 +4,47 @@ import VideoList from "../components/VideoList";
 import VideoPlayer from "../components/VideoPlayer";
 import EditVideoModal from "../components/EditVideoModal";
 import api from "../api";
+import Swal from "sweetalert2";
 
 const HomePage = () => {
-  // State to store all videos fetched from the backend
   const [videos, setVideos] = useState([]);
-
-  // Search term for filtering videos
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Currently selected video for playback
   const [selectedVideo, setSelectedVideo] = useState(null);
-
-  // Video selected for editing in modal
   const [editVideo, setEditVideo] = useState(null);
 
-  // Fetch videos from backend (with optional search query)
   const fetchVideos = async (search = "") => {
     try {
       const res = await api.get(`/?search=${search}`);
       setVideos(res.data);
     } catch (err) {
       console.error("Error fetching videos:", err);
+      Swal.fire("Error", "Failed to fetch videos.", "error");
     }
   };
 
-  // Fetch all videos on initial load and when search term changes
   useEffect(() => {
     fetchVideos(searchTerm);
   }, [searchTerm]);
 
-  // Handle video deletion
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this video?")) return;
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to recover this video!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await api.delete(`/${id}`);
-      fetchVideos(searchTerm); // Refresh list
-      if (selectedVideo?.id === id) setSelectedVideo(null); // Deselect if deleted
+      await fetchVideos(searchTerm);
+      if (selectedVideo?.id === id) setSelectedVideo(null);
+      Swal.fire("Deleted!", "The video has been deleted.", "success");
     } catch (err) {
       console.error("Error deleting video:", err);
+      Swal.fire("Error", "Failed to delete video.", "error");
     }
   };
 
@@ -51,7 +53,12 @@ const HomePage = () => {
       <h1 className="text-2xl font-bold mb-4">🎬 Welcome to Video Manager</h1>
 
       {/* Upload Form */}
-      <UploadVideoForm onUpload={fetchVideos} />
+      <UploadVideoForm
+        onUpload={() => {
+          fetchVideos(searchTerm);
+          Swal.fire("Success", "Video uploaded successfully!", "success");
+        }}
+      />
 
       {/* Search Input */}
       <input
@@ -81,6 +88,7 @@ const HomePage = () => {
           onUpdate={() => {
             fetchVideos(searchTerm);
             setEditVideo(null);
+            Swal.fire("Success", "Video updated successfully!", "success");
           }}
         />
       )}

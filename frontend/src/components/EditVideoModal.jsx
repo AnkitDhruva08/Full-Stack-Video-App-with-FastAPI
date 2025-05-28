@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../api";
+import Swal from "sweetalert2";
 
 export default function EditVideoModal({ video, onClose, onUpdate }) {
   const [title, setTitle] = useState(video.title);
@@ -20,10 +21,13 @@ export default function EditVideoModal({ video, onClose, onUpdate }) {
       await api.put(`/${video.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      Swal.fire("Success", "Video updated successfully!", "success");
       onUpdate();
     } catch {
-      alert("Update failed.");
+      Swal.fire("Error", "Failed to update the video.", "error");
     }
+
     setLoading(false);
   };
 

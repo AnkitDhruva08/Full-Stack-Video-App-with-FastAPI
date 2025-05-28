@@ -27,7 +27,7 @@ export default function VideoList({ videos, onSelect, onDelete, onEdit }) {
             </button>
             <button
               onClick={() => {
-                if(window.confirm("Delete this video?")) onDelete(video.id);
+                 onDelete(video.id);
               }}
               className="text-red-600 hover:text-red-800"
               title="Delete"

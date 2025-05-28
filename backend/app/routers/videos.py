@@ -4,7 +4,7 @@ from uuid import uuid4
 import shutil, os
 from .. import crud, schemas, database
 
-router = APIRouter(prefix="/videos", tags=["Videos"])
+router = APIRouter(prefix="/api/videos", tags=["Videos"])
 
 UPLOAD_DIR = "videos"
 
