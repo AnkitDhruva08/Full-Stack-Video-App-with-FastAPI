@@ -3,6 +3,7 @@ import UploadVideoForm from "../components/UploadVideoForm";
 import VideoList from "../components/VideoList";
 import VideoPlayer from "../components/VideoPlayer";
 import EditVideoModal from "../components/EditVideoModal";
+import CachedVideos from "../components/CachedVideos"; // ✅ Add this line
 import api from "../api";
 import Swal from "sweetalert2";
 
@@ -69,13 +70,16 @@ const HomePage = () => {
         className="mt-6 w-full p-2 border rounded"
       />
 
-      {/* Video List */}
+      {/* Video List (from server) */}
       <VideoList
         videos={videos}
         onSelect={setSelectedVideo}
         onDelete={handleDelete}
         onEdit={setEditVideo}
       />
+
+      {/* Cached Videos (for offline mode) */}
+      <CachedVideos onSelect={setSelectedVideo} />
 
       {/* Video Playback */}
       {selectedVideo && <VideoPlayer video={selectedVideo} />}

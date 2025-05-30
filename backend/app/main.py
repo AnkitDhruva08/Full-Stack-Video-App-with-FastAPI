@@ -1,18 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.routers import videos
 from app.database import Base, engine
+from app.middleware.range_middleware import RangeRequestMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
+from app.config import VIDEOS_DIR  # Import VIDEOS_DIR here
+
 import os
-from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# Create DB tables
 print("Creating database tables if they don't exist...")
 Base.metadata.create_all(bind=engine)
 print("Database tables ensured.")
 
-# Setup CORS
+# Global CORS middleware for API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -20,28 +25,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-print("CORS middleware enabled for http://localhost:5173")
 
-# Ensure 'videos' directory exists
-# VIDEOS_DIR = os.path.join(os.path.dirname(__file__), "..", "videos")
-VIDEOS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "videos"))
-print('VIDEOS_DIR ==<<<>>', VIDEOS_DIR)
+# Optional middleware to support HTTP Range Requests for video streaming
+app.add_middleware(RangeRequestMiddleware)
+
+print("VIDEOS_DIR ==<<<>>", VIDEOS_DIR)
+
+# Create directory if it doesn't exist
 if not os.path.exists(VIDEOS_DIR):
     os.makedirs(VIDEOS_DIR)
     print(f"Created 'videos' directory at {VIDEOS_DIR}")
 else:
     print(f"'videos' directory already exists at {VIDEOS_DIR}")
 
+class CORSMiddlewareForStaticFiles(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response: Response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
 
+app.add_middleware(CORSMiddlewareForStaticFiles)
 
-
-# ✅ Mount the directory so FastAPI serves video files
 app.mount("/videos", StaticFiles(directory=VIDEOS_DIR), name="videos")
-# Include routers
+
 app.include_router(videos.router)
 print("Video router loaded and registered.")
 
-# Optional test route
 @app.get("/")
 def read_root():
     return {"message": "Hello World"}
